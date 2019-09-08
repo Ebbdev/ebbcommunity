@@ -3,7 +3,7 @@
 {% block body %}
 
 <div class="container">
-    <h3>Makale Oluştur</h3>
+    <h3>Makale Güncelle</h3>
     <hr>
     {% from "includes/formhelpers.html" import render_field %}
     
@@ -14,11 +14,12 @@
         {{ render_field(form.content , class = "form-control") }}
     
     
-        <button type="submit" class="btn btn-danger">Makale Ekle</button>
+        <button type="submit" class="btn btn-danger">Makale Güncelle</button>
     
     </form>
-</div>
+    
 
+</div>
 
 
 

@@ -57,6 +57,98 @@ app.config["MYSQL_DB"] = "projects"
 app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 mysql = MySQL(app)  #Uygulamaya entegre ettirilmesi
 
+#Detay sayfası
+@app.route("/article/<string:id>")
+def article(id):
+    cursor = mysql.connection.cursor()
+
+    sorgu = "Select * from articles where id = %s"
+
+    result = cursor.execute(sorgu,(id,))
+    if result > 0:
+        article = cursor.fetchone()
+        return render_template("article.html",article = article)
+    else:
+        return render_template("article.html")
+#Makale Güncelleme
+@app.route("/edit/<string:id>",methods = ["GET","POST"])
+@login_required
+def update(id):
+
+    if request.method == "GET" :
+        cursor = mysql.connection.cursor()
+
+        sorgu = "Select * from articles where id = %s and author = %s"
+        result = cursor.execute(sorgu,(id,session["username"]))
+
+        if result == 0 :
+            flash("Böyle bir işleme yetkiniz yok ya da makale bulunmadı","danger")
+            return redirect(url_for("index"))
+        else:
+            article = cursor.fetchone()
+            form = ArticleForm()
+
+            form.title.data = article["title"]
+            form.content.data = article["content"]
+
+            return render_template("update.html",form = form)
+
+    else:
+        #Post request
+        form = ArticleForm(request.form)
+        newTitle = form.title.data
+        newContent = form.content.data
+
+        sorgu2 = "Update articles Set title = %s, content = %s where id = %s"
+        cursor = mysql.connection.cursor()
+        cursor.execute(sorgu2,(newTitle,newContent,id))
+        mysql.connection.commit()
+
+        flash("Başarıyla güncellendi " , "success")
+
+        return redirect(url_for("dashboard"))
+
+
+
+
+#Search işlemi
+@app.route("/search",methods = ["GET","POST"])
+def search():
+    if request.method == "GET":
+        return redirect(url_for("index"))
+    else:
+        keyword = request.form.get("keyword")
+
+        cursor = mysql.connection.cursor()
+        sorgu = "Select * from articles where title like '%"+keyword + "%' "
+        result = cursor.execute(sorgu)
+
+        if result == 0:
+            flash("Aranan sonuç bulunmuyor" , "warning")
+            return redirect(url_for("articles"))
+        else:
+            articles = cursor.fetchall()
+            return render_template("articles.html",articles=articles)
+
+
+#Makale Silme 
+@app.route("/delete/<string:id>")
+@login_required
+def delete(id):
+    cursor = mysql.connection.cursor()
+
+    sorgu = "Select * from articles where author = %s and id= %s" 
+    result = cursor.execute(sorgu,(session["username"],id))
+
+    if result > 0:
+        sorgu2 = "Delete from articles where id = %s"
+        cursor.execute(sorgu2,(id,))
+        mysql.connection.commit()
+        return redirect(url_for("dashboard"))
+
+    else:
+        flash("Silme yetkiniz yok !!!", "danger")
+        return redirect(url_for("index"))
 
 
 
